@@ -1,0 +1,80 @@
+---
+title: "Untitled"
+author: "Alex"
+date: "April 22, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+##Code for reading in the dataset and/or processing the data
+df <- read.csv("activity.csv")
+library(ggplot2)
+install.packages("dplyr")
+library(dplyr)
+##Histogram of the total number of steps taken each day
+hist(df$steps, df$date)
+days<-df$date
+steps<- df$steps
+stepsperday<- aggregate(steps, list(days), FUN=sum)
+head(stepsperday)
+hist(stepsperday$x, xlab = "Steps Per Day", main = "Histogram of Frequency of Steps per Day")
+##Mean and median number of steps taken each day
+mean(stepsperday$x, na.rm = TRUE)
+median(stepsperday$x, na.rm = TRUE)
+##Time series plot of the average number of steps taken
+avgstepsperint <- df %>% filter(!is.na(steps)) %>% group_by(interval) %>% summarize(steps = mean(steps))
+ggplot(avgstepsperint, aes(interval, steps)) + geom_line() + ggtitle("Average Steps per Inteveral")
+
+##The 5-minute interval that, on average, contains the maximum number of steps
+head(activity)
+max(avgstepsperint$steps)
+which(grepl(206.1698, avgstepsperint$steps))
+avgstepsperint[104,]
+
+##Code to describe and show a strategy for imputing missing data
+missing <-is.na(df$steps)
+sum(missing)
+(sum(missing))/(length(avgstepsperint$steps))
+complete<-df
+complete$steps<- ifelse(is.na(complete$steps),avgstepsperint$steps[match(complete$interval,avgstepsperint$interval)],complete$steps)
+
+##Histogram of the total number of steps taken each day after missing values are imputed
+fullstepsperday<- aggregate(complete$steps, list(complete$date), FUN=sum)
+hist(fullstepsperday$x, xlab = "Steps Per Day", main = "Histogram of Frequency of Steps per Day")
+##Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+dates<- as.Date(complete$date)
+days<-weekdays(dates)
+days<-ifelse(grepl("Saturday", days), "Weekend", days)
+days<-ifelse(grepl("Sunday", days), "Weekend", days)
+days<-ifelse(grepl("Monday", days), "Weekday", days)
+days<-ifelse(grepl("Tuesday", days), "Weekday", days)
+days<-ifelse(grepl("Wednesday", days), "Weekday", days)
+days<-ifelse(grepl("Thursday", days), "Weekday", days)
+days<-ifelse(grepl("Friday", days), "Weekday", days)
+days<- as.factor(days)
+complete<-cbind(complete,days)
+intbydaytype <- complete %>% group_by(interval, days) %>% summarise(steps = mean(steps))
+ggplot(intbydaytype, aes(x=interval, y=steps, color = days)) + geom_line() + facet_wrap(~days, ncol = 1, nrow=2)
+
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
